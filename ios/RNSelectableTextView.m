@@ -23,11 +23,11 @@
 @implementation RNSelectableTextView
 {
     RCTUITextView *_backedTextInputView;
+    // array of urls and associated positions
+    NSMutableArray <NSDictionary*> *urlAndRange;
 }
 
 NSString *const CUSTOM_SELECTOR = @"_CUSTOM_SELECTOR_";
-// array of urls and associated positions
-NSMutableArray <NSDictionary*> *urlAndRange;
 
 UITextPosition *selectionStart;
 UITextPosition* beginning;
