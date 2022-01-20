@@ -130,6 +130,34 @@ UITextPosition* beginning;
         @"clickedRangeStart": @(location),
         @"clickedRangeEnd": @(endLocation),
     });
+
+    const NSInteger tapLocation = [_backedTextInputView offsetFromPosition:beginning toPosition:tapPos];
+    
+    NSString* url;
+    NSUInteger urlAssociatedLocation, urlAssociatedLength;
+    
+    
+    NSLog(@" == inainte de for");
+    for (NSDictionary* item in urlAndRange){
+        
+        url = [item objectForKey:@"url"];
+        urlAssociatedLocation = [ [item objectForKey:@"location"] unsignedIntValue] ;
+        urlAssociatedLength =  [[item objectForKey:@"length"] unsignedIntValue] ;        
+
+        
+        if(urlAssociatedLocation <= tapLocation && tapLocation <= urlAssociatedLocation + urlAssociatedLength ){
+
+            NSLog(@" A APASAT!! select location: %ld and end location: %ld", (long)location, (long)endLocation);
+
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
+                
+        }
+    }
+
+    self.onHighlightPress(@{
+        @"clickedRangeStart": @(location),
+        @"clickedRangeEnd": @(endLocation),
+    });
 }
 
 -(void) handleLongPress: (UILongPressGestureRecognizer *) gesture
@@ -180,12 +208,60 @@ UITextPosition* beginning;
 {
     if (self.value) {
         NSAttributedString *str = [[NSAttributedString alloc] initWithString:self.value attributes:self.textAttributes.effectiveTextAttributes];
-        
+
         [super setAttributedText:str];
+        NSLog(@" == Variable Attributed Text: %@",str);
     } else {
         [super setAttributedText:attributedText];
+        NSLog(@" == Default Attributed Text: %@", self.attributedText);
     }
+    NSLog(@" == Received Links: %@", self.linksArray);
+    
+    // don't re-calculate if the array already has elements
+    if(urlAndRange.count > 0){
+        return;
+    }
+
+    NSMutableAttributedString *res = [attributedText mutableCopy];
+
+    [res beginEditing];
+    __block CGFloat *colors;
+
+    // init the array
+    urlAndRange = [NSMutableArray array];
+
+    // for each font-color found in the attributed string
+    [res enumerateAttribute:NSForegroundColorAttributeName inRange:NSMakeRange(0, res.length) options:0 usingBlock:^(id value, NSRange range, BOOL *stop) {
+
+        // if a font-color was found in the attributed string
+        if (value) {
+            UIColor *fontColor = (UIColor *)value;
+            // colors[0] - Red , colors[1] - Green, colors[2] - Blue, colors[3] - Alpha
+            colors = CGColorGetComponents(fontColor.CGColor);
+            
+            // the red component of a link text color is 0.4 and 0.72 depending of the theme
+            // regular text has values around 0.12 on light and 1 on dark
+            if( colors[0] > 0.4 && colors[0] < 0.8) {
+
+                // make sure the linksArray won't be out of range
+                if(self.linksArray.count > urlAndRange.count){
+                    NSDictionary* itemToBeAdded =   @{
+                    @"url": self.linksArray[urlAndRange.count],
+                    @"location": [NSString stringWithFormat:@"%lu",range.location],
+                    @"length": [NSString stringWithFormat: @"%lu", range.length],
+                };
+                [urlAndRange addObject:itemToBeAdded];
+            }
+            
+        }
+    }];
+
+
+    [res endEditing];
+
+    
 }
+
 
 - (id<RCTBackedTextInputViewProtocol>)backedTextInputView
 {
