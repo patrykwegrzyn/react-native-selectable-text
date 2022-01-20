@@ -133,7 +133,7 @@ UITextPosition* beginning;
     
     
     for (NSDictionary* item in urlAndRange){
-        urlAssociatedLocation = [ [item objectForKey:@"location"] unsignedIntValue] ;
+        urlAssociatedLocation = [[item objectForKey:@"location"] unsignedIntValue] ;
         urlAssociatedLength =  [[item objectForKey:@"length"] unsignedIntValue] ;
         url = [item objectForKey:@"url"];
         if(urlAssociatedLocation <= tapLocation && tapLocation <= urlAssociatedLocation + urlAssociatedLength ){
@@ -221,10 +221,10 @@ UITextPosition* beginning;
             
             // the red component of a link text color is 0.4 and 0.72 depending of the theme
             // regular text has values around 0.12 on light and 1 on dark
-            if( colors[0] > 0.4 && colors[0] < 0.8) {
+            if (colors[0] > 0.4 && colors[0] < 0.8) {
                 // make sure the linksArray won't be out of range
-                if(self.linksArray.count > urlAndRange.count){
-                    NSDictionary* itemToBeAdded =   @{
+                if (self.linksArray.count > urlAndRange.count) {
+                    NSDictionary* itemToBeAdded = @{
                         @"url": self.linksArray[urlAndRange.count],
                         @"location": [NSString stringWithFormat:@"%lu",range.location],
                         @"length": [NSString stringWithFormat: @"%lu", range.length],
