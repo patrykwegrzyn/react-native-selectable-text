@@ -19,6 +19,7 @@ export interface SelectableTextProps {
   TextComponent?: ReactNode;
   textValueProp?: string;
   textComponentProps?: TextProps;
+  linksArray?: string[];
 }
 
 export class SelectableText extends React.Component<SelectableTextProps> {}
