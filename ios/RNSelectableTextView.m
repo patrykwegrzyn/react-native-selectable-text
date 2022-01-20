@@ -26,6 +26,8 @@
 }
 
 NSString *const CUSTOM_SELECTOR = @"_CUSTOM_SELECTOR_";
+// array of urls and associated positions
+NSMutableArray <NSDictionary*> *urlAndRange;
 
 UITextPosition *selectionStart;
 UITextPosition* beginning;
@@ -50,24 +52,23 @@ UITextPosition* beginning;
         _backedTextInputView.editable = NO;
         _backedTextInputView.selectable = YES;
         _backedTextInputView.contextMenuHidden = YES;
-
+        
         beginning = _backedTextInputView.beginningOfDocument;
         
         for (UIGestureRecognizer *gesture in [_backedTextInputView gestureRecognizers]) {
             if (
                 [gesture isKindOfClass:[UIPanGestureRecognizer class]]
-            ) {
+                ) {
                 [_backedTextInputView setExclusiveTouch:NO];
                 gesture.enabled = YES;
             } else {
                 gesture.enabled = NO;
             }
         }
-
+        
         [self addSubview:_backedTextInputView];
         
         UILongPressGestureRecognizer *longPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
-        
         
         UITapGestureRecognizer *tapGesture = [ [UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
         tapGesture.numberOfTapsRequired = 2;
@@ -81,7 +82,7 @@ UITextPosition* beginning;
         
         [self setUserInteractionEnabled:YES];
     }
-
+    
     return self;
 }
 
@@ -126,38 +127,24 @@ UITextPosition* beginning;
     const NSInteger location = [_backedTextInputView offsetFromPosition:beginning toPosition:selectionStart];
     const NSInteger endLocation = [_backedTextInputView offsetFromPosition:beginning toPosition:selectionEnd];
     
-    self.onHighlightPress(@{
-        @"clickedRangeStart": @(location),
-        @"clickedRangeEnd": @(endLocation),
-    });
-
     const NSInteger tapLocation = [_backedTextInputView offsetFromPosition:beginning toPosition:tapPos];
-    
     NSString* url;
     NSUInteger urlAssociatedLocation, urlAssociatedLength;
     
     
-    NSLog(@" == inainte de for");
     for (NSDictionary* item in urlAndRange){
-        
-        url = [item objectForKey:@"url"];
         urlAssociatedLocation = [ [item objectForKey:@"location"] unsignedIntValue] ;
-        urlAssociatedLength =  [[item objectForKey:@"length"] unsignedIntValue] ;        
-
-        
+        urlAssociatedLength =  [[item objectForKey:@"length"] unsignedIntValue] ;
+        url = [item objectForKey:@"url"];
         if(urlAssociatedLocation <= tapLocation && tapLocation <= urlAssociatedLocation + urlAssociatedLength ){
-
-            NSLog(@" A APASAT!! select location: %ld and end location: %ld", (long)location, (long)endLocation);
-
             [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
-                
         }
     }
-
+    
     self.onHighlightPress(@{
         @"clickedRangeStart": @(location),
         @"clickedRangeEnd": @(endLocation),
-    });
+                          });
 }
 
 -(void) handleLongPress: (UILongPressGestureRecognizer *) gesture
@@ -168,7 +155,6 @@ UITextPosition* beginning;
     
     UITextPosition *tapPos = [_backedTextInputView closestPositionToPoint:pos];
     UITextRange *word = [_backedTextInputView.tokenizer rangeEnclosingPosition:tapPos withGranularity:(UITextGranularityWord) inDirection:UITextLayoutDirectionRight];
-
     
     switch ([gesture state]) {
         case UIGestureRecognizerStateBegan:
@@ -180,21 +166,20 @@ UITextPosition* beginning;
             selectionStart = nil;
             [self _handleGesture];
             return;
-            
         default:
             break;
     }
     
     UITextPosition *selectionEnd = word.end;
-
+    
     const NSInteger location = [_backedTextInputView offsetFromPosition:beginning toPosition:selectionStart];
     const NSInteger endLocation = [_backedTextInputView offsetFromPosition:beginning toPosition:selectionEnd];
-
+    
     if (location == 0 && endLocation == 0) return;
-
+    
     [_backedTextInputView select:self];
     [_backedTextInputView setSelectedRange:NSMakeRange(location, endLocation - location)];
-
+    
 }
 
 -(void) handleTap: (UITapGestureRecognizer *) gesture
@@ -208,16 +193,13 @@ UITextPosition* beginning;
 {
     if (self.value) {
         NSAttributedString *str = [[NSAttributedString alloc] initWithString:self.value attributes:self.textAttributes.effectiveTextAttributes];
-
+        
         [super setAttributedText:str];
-        NSLog(@" == Variable Attributed Text: %@",str);
     } else {
         [super setAttributedText:attributedText];
-        NSLog(@" == Default Attributed Text: %@", self.attributedText);
     }
-    NSLog(@" == Received Links: %@", self.linksArray);
     
-    // don't re-calculate if the array already has elements
+    // don't re-calculate the array if elements exist
     if(urlAndRange.count > 0){
         return;
     }
@@ -232,36 +214,30 @@ UITextPosition* beginning;
 
     // for each font-color found in the attributed string
     [res enumerateAttribute:NSForegroundColorAttributeName inRange:NSMakeRange(0, res.length) options:0 usingBlock:^(id value, NSRange range, BOOL *stop) {
-
         // if a font-color was found in the attributed string
         if (value) {
-            UIColor *fontColor = (UIColor *)value;
-            // colors[0] - Red , colors[1] - Green, colors[2] - Blue, colors[3] - Alpha
-            colors = CGColorGetComponents(fontColor.CGColor);
+            UIColor *oldColor = (UIColor *)value;
+            colors = CGColorGetComponents(oldColor.CGColor);
             
             // the red component of a link text color is 0.4 and 0.72 depending of the theme
             // regular text has values around 0.12 on light and 1 on dark
             if( colors[0] > 0.4 && colors[0] < 0.8) {
-
                 // make sure the linksArray won't be out of range
                 if(self.linksArray.count > urlAndRange.count){
                     NSDictionary* itemToBeAdded =   @{
-                    @"url": self.linksArray[urlAndRange.count],
-                    @"location": [NSString stringWithFormat:@"%lu",range.location],
-                    @"length": [NSString stringWithFormat: @"%lu", range.length],
-                };
-                [urlAndRange addObject:itemToBeAdded];
+                        @"url": self.linksArray[urlAndRange.count],
+                        @"location": [NSString stringWithFormat:@"%lu",range.location],
+                        @"length": [NSString stringWithFormat: @"%lu", range.length],
+                    };
+                    [urlAndRange addObject:itemToBeAdded];
+                }
             }
             
         }
     }];
-
-
     [res endEditing];
-
     
 }
-
 
 - (id<RCTBackedTextInputViewProtocol>)backedTextInputView
 {
@@ -280,7 +256,7 @@ UITextPosition* beginning;
         @"eventType": eventType,
         @"selectionStart": @(start),
         @"selectionEnd": @(selection.end)
-    });
+                     });
     
     [_backedTextInputView setSelectedTextRange:nil notifyDelegate:false];
 }
@@ -314,7 +290,7 @@ UITextPosition* beginning;
     if(selectionStart != nil) {return NO;}
     NSString *sel = NSStringFromSelector(action);
     NSRange match = [sel rangeOfString:CUSTOM_SELECTOR];
-
+    
     if (match.location == 0) {
         return YES;
     }
@@ -330,10 +306,10 @@ UITextPosition* beginning;
         for (UIView *subview in self.subviews.reverseObjectEnumerator) {
             CGPoint subPoint = [subview convertPoint:point toView:self];
             UIView *result = [subview hitTest:subPoint withEvent:event];
-
+            
             if (!result.isFirstResponder) {
                 NSString *name = NSStringFromClass([result class]);
-
+                
                 if ([name isEqual:@"UITextRangeView"]) {
                     sub = result;
                 }
@@ -344,7 +320,7 @@ UITextPosition* beginning;
             [_backedTextInputView setSelectedTextRange:nil notifyDelegate:true];
         }
     }
-
+    
     return [super hitTest:point withEvent:event];
 }
 
