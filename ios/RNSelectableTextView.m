@@ -137,7 +137,13 @@ UITextPosition* beginning;
         urlAssociatedLength =  [[item objectForKey:@"length"] unsignedIntValue] ;
         url = [item objectForKey:@"url"];
         if(urlAssociatedLocation <= tapLocation && tapLocation <= urlAssociatedLocation + urlAssociatedLength ){
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
+            // open the link with custom function from JS, if the prop is provided
+            if(_onLinkPress && ![_onLinkPress isKindOfClass:[NSNull class]] ){
+                _onLinkPress(@{@"link": url});
+            }
+            else{
+                [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
+            }
         }
     }
     
