@@ -20,6 +20,10 @@ export interface SelectableTextProps {
   textValueProp?: string;
   textComponentProps?: TextProps;
   linksArray?: string[];
+  /**
+   * iOS ONLY
+   */
+  onLinksPress?: (link: string) => void;
 }
 
 export class SelectableText extends React.Component<SelectableTextProps> {}
