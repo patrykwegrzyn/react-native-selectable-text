@@ -19,6 +19,7 @@ const combineHighlights = memoize(numbers => {
           start: prev.start,
           end: Math.max(prev.end, next.end),
           id: next.id,
+          color: next.color
         })
       }
       return combined
@@ -36,16 +37,18 @@ const mapHighlightsRanges = (value, highlights) => {
 
   const data = [{ isHighlight: false, text: value.slice(0, combinedHighlights[0].start) }]
 
-  combinedHighlights.forEach(({ start, end }, idx) => {
+  combinedHighlights.forEach(({ start, end, color }, idx) => {
     data.push({
       isHighlight: true,
       text: value.slice(start, end),
+      color
     })
 
     if (combinedHighlights[idx + 1]) {
       data.push({
         isHighlight: false,
         text: value.slice(end, combinedHighlights[idx + 1].start),
+        color
       })
     }
   })
@@ -106,14 +109,14 @@ export const SelectableText = ({
   if (usesTextComponent) {
     textValue = (
       props.highlights && props.highlights.length > 0
-        ? mapHighlightsRanges(value, props.highlights).map(({ id, isHighlight, text }) => (
+        ? mapHighlightsRanges(value, props.highlights).map(({ id, isHighlight, text, color }) => (
             <Text
               key={v4()}
               selectable
               style={
                 isHighlight
                   ? {
-                      backgroundColor: props.highlightColor,
+                      backgroundColor: color ? color: props.highlightColor,
                     }
                   : {}
               }
