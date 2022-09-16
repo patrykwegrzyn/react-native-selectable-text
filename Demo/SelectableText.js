@@ -28,7 +28,7 @@ const combineHighlights = memoize(numbers => {
 
 /**
  * value: string
- * highlights: array({start: int, end: int, id: any})
+ * highlights: array({start: int, end: int, id: any, color?: string})
  */
 const mapHighlightsRanges = (value, highlights) => {
   const combinedHighlights = combineHighlights(highlights)
@@ -37,8 +37,9 @@ const mapHighlightsRanges = (value, highlights) => {
 
   const data = [{ isHighlight: false, text: value.slice(0, combinedHighlights[0].start) }]
 
-  combinedHighlights.forEach(({ start, end, color }, idx) => {
+  combinedHighlights.forEach(({ id, start, end, color }, idx) => {
     data.push({
+      id,
       isHighlight: true,
       text: value.slice(start, end),
       color
@@ -48,7 +49,6 @@ const mapHighlightsRanges = (value, highlights) => {
       data.push({
         isHighlight: false,
         text: value.slice(end, combinedHighlights[idx + 1].start),
-        color
       })
     }
   })
@@ -66,7 +66,7 @@ const mapHighlightsRanges = (value, highlights) => {
  * ...TextProps
  * onSelection: ({ content: string, eventType: string, selectionStart: int, selectionEnd: int }) => void
  * children: ReactNode
- * highlights: array({ id, start, end })
+ * highlights: array({ id, start, end, color })
  * highlightColor: string
  * onHighlightPress: string => void
  * textValueProp: string
